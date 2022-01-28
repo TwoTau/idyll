@@ -8,7 +8,7 @@ describe('compiler', function() {
   describe('lexer', function() {
     it('should tokenize the input', function() {
       var lex = Lexer();
-      var results = lex('Hello \n\nWorld! []');
+      var results = lex('Hello \n\nWorld! {}');
       expect(results.tokens.join(' ')).to.eql(
         'WORDS TOKEN_VALUE_START "Hello " TOKEN_VALUE_END BREAK WORDS TOKEN_VALUE_START "World" TOKEN_VALUE_END WORDS TOKEN_VALUE_START "! " TOKEN_VALUE_END OPEN_BRACKET CLOSE_BRACKET EOF'
       );
@@ -16,14 +16,14 @@ describe('compiler', function() {
 
     it('should tokenize the input with a complex component', function() {
       var lex = Lexer();
-      var results = lex('Hello \n\nWorld \n\n [VarDisplay var:v work:"no" /]');
+      var results = lex('Hello \n\nWorld \n\n {VarDisplay var=v work="no" /}');
       expect(results.tokens.join(' ')).to.eql(
         'WORDS TOKEN_VALUE_START "Hello " TOKEN_VALUE_END BREAK WORDS TOKEN_VALUE_START "World " TOKEN_VALUE_END BREAK OPEN_BRACKET COMPONENT_NAME TOKEN_VALUE_START "VarDisplay" TOKEN_VALUE_END COMPONENT_WORD TOKEN_VALUE_START "var" TOKEN_VALUE_END PARAM_SEPARATOR COMPONENT_WORD TOKEN_VALUE_START "v" TOKEN_VALUE_END COMPONENT_WORD TOKEN_VALUE_START "work" TOKEN_VALUE_END PARAM_SEPARATOR STRING TOKEN_VALUE_START "&quot;no&quot;" TOKEN_VALUE_END FORWARD_SLASH CLOSE_BRACKET EOF'
       );
     });
     it('should support single quotes around strings', function() {
       var lex = Lexer();
-      var results = lex("Hello \n\nWorld \n\n [VarDisplay var:v work:'no' /]");
+      var results = lex("Hello \n\nWorld \n\n {VarDisplay var=v work='no' /}");
       expect(results.tokens.join(' ')).to.eql(
         'WORDS TOKEN_VALUE_START "Hello " TOKEN_VALUE_END BREAK WORDS TOKEN_VALUE_START "World " TOKEN_VALUE_END BREAK OPEN_BRACKET COMPONENT_NAME TOKEN_VALUE_START "VarDisplay" TOKEN_VALUE_END COMPONENT_WORD TOKEN_VALUE_START "var" TOKEN_VALUE_END PARAM_SEPARATOR COMPONENT_WORD TOKEN_VALUE_START "v" TOKEN_VALUE_END COMPONENT_WORD TOKEN_VALUE_START "work" TOKEN_VALUE_END PARAM_SEPARATOR STRING TOKEN_VALUE_START "&quot;no&quot;" TOKEN_VALUE_END FORWARD_SLASH CLOSE_BRACKET EOF'
       );
@@ -55,9 +55,9 @@ describe('compiler', function() {
 
     it('should ignore escaped brackets', function() {
       var lex = Lexer();
-      var results = lex('Text with a range, \\[0, 20\\].');
+      var results = lex('Text with a range, \\{0, 20\\}.');
       expect(results.tokens.join(' ')).to.eql(
-        'WORDS TOKEN_VALUE_START "Text with a range, " TOKEN_VALUE_END WORDS TOKEN_VALUE_START "[" TOKEN_VALUE_END WORDS TOKEN_VALUE_START "0" TOKEN_VALUE_END WORDS TOKEN_VALUE_START ", " TOKEN_VALUE_END WORDS TOKEN_VALUE_START "2" TOKEN_VALUE_END WORDS TOKEN_VALUE_START "0" TOKEN_VALUE_END WORDS TOKEN_VALUE_START "]" TOKEN_VALUE_END WORDS TOKEN_VALUE_START "." TOKEN_VALUE_END EOF'
+        'WORDS TOKEN_VALUE_START "Text with a range, " TOKEN_VALUE_END WORDS TOKEN_VALUE_START "{" TOKEN_VALUE_END WORDS TOKEN_VALUE_START "0" TOKEN_VALUE_END WORDS TOKEN_VALUE_START ", " TOKEN_VALUE_END WORDS TOKEN_VALUE_START "2" TOKEN_VALUE_END WORDS TOKEN_VALUE_START "0" TOKEN_VALUE_END WORDS TOKEN_VALUE_START "}" TOKEN_VALUE_END WORDS TOKEN_VALUE_START "." TOKEN_VALUE_END EOF'
       );
     });
 
@@ -71,7 +71,7 @@ describe('compiler', function() {
 
     it('should handle equations', function() {
       var lex = Lexer();
-      var results = lex('[Equation]y = 0[/Equation]');
+      var results = lex('{equation}y = 0{/equation}');
       expect(results.tokens.join(' ')).to.eql(
         'OPEN_BRACKET COMPONENT_NAME TOKEN_VALUE_START "equation" TOKEN_VALUE_END CLOSE_BRACKET WORDS TOKEN_VALUE_START "y = 0" TOKEN_VALUE_END OPEN_BRACKET FORWARD_SLASH COMPONENT_NAME TOKEN_VALUE_START "equation" TOKEN_VALUE_END CLOSE_BRACKET EOF'
       );
@@ -108,7 +108,7 @@ describe('compiler', function() {
     it('should handle a component name with a period', function() {
       var lex = Lexer();
       var results = lex(
-        'This component name has a period separator [component.val /].'
+        'This component name has a period separator {component.val /}.'
       );
       expect(results.tokens.join(' ')).to.eql(
         'WORDS TOKEN_VALUE_START "This component name has a period separator " TOKEN_VALUE_END OPEN_BRACKET COMPONENT_NAME TOKEN_VALUE_START "component.val" TOKEN_VALUE_END FORWARD_SLASH CLOSE_BRACKET WORDS TOKEN_VALUE_START "." TOKEN_VALUE_END EOF'
@@ -118,7 +118,7 @@ describe('compiler', function() {
     it('should handle a component name with multiple periods', function() {
       var lex = Lexer();
       var results = lex(
-        'This component name has a period separator [component.val.v /].'
+        'This component name has a period separator {component.val.v /}.'
       );
       expect(results.tokens.join(' ')).to.eql(
         'WORDS TOKEN_VALUE_START "This component name has a period separator " TOKEN_VALUE_END OPEN_BRACKET COMPONENT_NAME TOKEN_VALUE_START "component.val.v" TOKEN_VALUE_END FORWARD_SLASH CLOSE_BRACKET WORDS TOKEN_VALUE_START "." TOKEN_VALUE_END EOF'
@@ -127,7 +127,7 @@ describe('compiler', function() {
 
     it('should handle an i tag', function() {
       var lex = Lexer();
-      var results = lex('[i]not even em[/i]');
+      var results = lex('{i}not even em{/i}');
       expect(results.tokens.join(' ')).to.eql(
         'OPEN_BRACKET COMPONENT_NAME TOKEN_VALUE_START "i" TOKEN_VALUE_END CLOSE_BRACKET WORDS TOKEN_VALUE_START "not even em" TOKEN_VALUE_END OPEN_BRACKET FORWARD_SLASH COMPONENT_NAME TOKEN_VALUE_START "i" TOKEN_VALUE_END CLOSE_BRACKET EOF'
       );
@@ -139,9 +139,9 @@ describe('compiler', function() {
         Text. / Not a comment.
         // Comment
         // Second comment
-        [component]//not a comment
+        {component}//not a comment
           // comment inside components
-        [/component]// is a comment
+        {/component}// is a comment
 
         not a comment: https://stuff.com
       `);
@@ -199,7 +199,7 @@ describe('compiler', function() {
         ## This is a header
         And this is a normal paragraph.
 
-        [component]# This header is inside a component.[/component]
+        {component}# This header is inside a component.{/component}
       `;
       var lex = Lexer();
       var results = lex(input);
@@ -208,7 +208,7 @@ describe('compiler', function() {
       );
     });
     it('should handle numbers with leading decimals as prop values in components', function() {
-      const input = `[component number:.1 /]`;
+      const input = `{component number=.1 /}`;
       const lex = Lexer();
       const results = lex(input);
       expect(results.tokens.join(' ')).to.eql(
@@ -216,12 +216,12 @@ describe('compiler', function() {
       );
     });
     it('should reject numbers with multiple decimal points', function() {
-      const input = `[component number:.1.1 /]`;
+      const input = `{component number=.1.1 /}`;
       const lex = Lexer();
       expect(() => lex(input)).to.throwException();
     });
     it('should handle numbers with decimals as prop values in components', function() {
-      const input = `[component number:1.1 /]`;
+      const input = `{component number=1.1 /}`;
       const lex = Lexer();
       const results = lex(input);
       expect(results.tokens.join(' ')).to.eql(
@@ -231,14 +231,14 @@ describe('compiler', function() {
 
     it('should handle equation alias', function() {
       var lex = Lexer({}, { Eq: 'equation' });
-      var results = lex('[Eq]y = 0[/Eq]');
+      var results = lex('{Eq}y = 0{/Eq}');
       expect(results.tokens.join(' ')).to.eql(
         'OPEN_BRACKET COMPONENT_NAME TOKEN_VALUE_START "equation" TOKEN_VALUE_END CLOSE_BRACKET WORDS TOKEN_VALUE_START "y = 0" TOKEN_VALUE_END OPEN_BRACKET FORWARD_SLASH COMPONENT_NAME TOKEN_VALUE_START "equation" TOKEN_VALUE_END CLOSE_BRACKET EOF'
       );
     });
     it('should handle code alias', function() {
       var lex = Lexer({}, { Cd: 'code' });
-      var results = lex('[Cd]y = 0[/Cd]');
+      var results = lex('{Cd}y = 0{/Cd}');
       expect(results.tokens.join(' ')).to.eql(
         'OPEN_BRACKET COMPONENT_NAME TOKEN_VALUE_START "code" TOKEN_VALUE_END CLOSE_BRACKET WORDS TOKEN_VALUE_START "y = 0" TOKEN_VALUE_END OPEN_BRACKET FORWARD_SLASH COMPONENT_NAME TOKEN_VALUE_START "code" TOKEN_VALUE_END CLOSE_BRACKET EOF'
       );
@@ -283,14 +283,14 @@ describe('compiler', function() {
       );
     });
     it('should parse a closed var', function() {
-      var input = '[var /]';
+      var input = '{var /}';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([['var', [], []]])
       );
     });
     it('should parse a closed component', function() {
       var input =
-        '[var name:"v1" value:5 /]\n\nJust a simple string plus a component \n\n [VarDisplay var:v1 /]';
+        '{var name="v1" value=5 /}\n\nJust a simple string plus a component \n\n {VarDisplay var=v1 /}';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           ['var', [['name', ['value', 'v1']], ['value', ['value', 5]]], []],
@@ -307,13 +307,13 @@ describe('compiler', function() {
     });
 
     it('should parse an open component', function() {
-      var input = '[Slideshow currentSlide:1]test test test[/Slideshow]';
+      var input = '{Slideshow currentSlide=1}test test test{/Slideshow}';
       var output = compile(input, { async: false });
     });
 
     it('should parse a nested component', function() {
       var input =
-        '[Slideshow currentSlide:1]text and stuff \n\n lots of newlines.\n\n[OpenComponent key:"val" ][/OpenComponent][/Slideshow]';
+        '{Slideshow currentSlide=1}text and stuff \n\n lots of newlines.\n\n{OpenComponent key="val" }{/OpenComponent}{/Slideshow}';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           [
@@ -336,7 +336,7 @@ describe('compiler', function() {
     });
     it('should handle an inline closed component', function() {
       var input =
-        'This is a normal text paragraph that [VarDisplay var:var /] has a component embedded in it.';
+        'This is a normal text paragraph that {VarDisplay var=var /} has a component embedded in it.';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           [
@@ -363,11 +363,11 @@ describe('compiler', function() {
         ## This is a header
         And this is a normal paragraph. This is # not a header.
 
-        [component]# This header is inside a component.[/component]
+        {component}# This header is inside a component.{/component}
 
-        [component]This is not a # header inside a component.[/component]
+        {component}This is not a # header inside a component.{/component}
 
-        [component /]
+        {component /}
 
         # Header
 
@@ -405,9 +405,9 @@ describe('compiler', function() {
         > This is a quote
         And this is a normal paragraph. This is > not a quote.
 
-        [component]> This quote is inside a component.[/component]
+        {component}> This quote is inside a component.{/component}
 
-        [component]This is not a > quote inside a component.[/component]
+        {component}This is not a > quote inside a component.{/component}
 
         [component /]
 
@@ -451,9 +451,9 @@ title: Title
 ## This is a header
 And this is a normal paragraph. This is # not a header.
 
-[component]# This header is inside a component.[/component]
+{component}# This header is inside a component.{/component}
 
-[component]This is not a # header inside a component.[/component]
+{component}This is not a # header inside a component.{/component}
 
 [component /]
 
@@ -534,7 +534,7 @@ End text
     });
 
     it('should parse an open component with a break at the end', function() {
-      var input = '[Slideshow currentSlide:1]text and stuff \n\n [/Slideshow]';
+      var input = '{Slideshow currentSlide=1}text and stuff \n\n {/Slideshow}';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           [
@@ -628,9 +628,9 @@ End text
         Text. / Not a comment.
         // Comment
         // Second comment
-        [component]//not a comment
+        {component}//not a comment
           // comment inside components
-        [/component]// is a comment
+        {/component}// is a comment
 
         not a comment: https://stuff.com
       `;
@@ -668,7 +668,7 @@ End text
     });
 
     it('should accept negative numbers', function() {
-      var input = '[component prop:-10 /]';
+      var input = '{component prop=-10 /}';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           ['TextContainer', [], [['component', [['prop', ['value', -10]]], []]]]
@@ -677,7 +677,7 @@ End text
     });
 
     it('should accept positive numbers', function() {
-      var input = '[component prop:10 /]';
+      var input = '{component prop=10 /}';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           ['TextContainer', [], [['component', [['prop', ['value', 10]]], []]]]
@@ -686,7 +686,7 @@ End text
     });
 
     it('should accept numbers /w a leading decimal point', function() {
-      const input = '[component prop:.1 /]';
+      const input = '{component prop=.1 /}';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           ['TextContainer', [], [['component', [['prop', ['value', 0.1]]], []]]]
@@ -695,7 +695,7 @@ End text
     });
 
     it('should handle booleans', function() {
-      const input = '[component prop:true /]';
+      const input = '{component prop=true /}';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           [
@@ -708,7 +708,7 @@ End text
     });
 
     it('should handle booleans in backticks', function() {
-      const input = '[component prop:`true` /]';
+      const input = '{component prop=`true` /}';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           [
@@ -878,7 +878,7 @@ End text
     });
     it('should handle component name with a period', function() {
       const input =
-        'This component name has a period separator [component.val /].';
+        'This component name has a period separator {component.val /}.';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           [
@@ -901,7 +901,7 @@ End text
     });
     it('should handle component name with multiple periods', function() {
       const input =
-        'This component name has a period separator [component.val.v /].';
+        'This component name has a period separator {component.val.v /}.';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           [
@@ -966,7 +966,7 @@ End text
     });
 
     it('should merge consecutive word blocks', function() {
-      const input = '[Equation]y = 0[/Equation]';
+      const input = '{Equation}y = 0{/Equation}';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           ['TextContainer', [], [['equation', [], ['y = 0']]]]
@@ -996,7 +996,7 @@ End text
     });
 
     it('should handle an i tag', function() {
-      const input = '[i]not even em[/i]';
+      const input = '{i}not even em{/i}';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([['TextContainer', [], [['i', [], ['not even em']]]]])
       );
@@ -1004,12 +1004,12 @@ End text
 
     it('should not insert extra div tags', function() {
       const input = `
-      [Slideshow]
-        [Slide/]
-        [Slide/]
+      {Slideshow}
+        {Slide/}
+        {Slide/}
 
-        [Slide/]
-      [/Slideshow]`;
+        {Slide/}
+      {/Slideshow}`;
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           [
@@ -1044,11 +1044,11 @@ End text
       const input = `
         This is text
 
-        [FullWidth]
+        {FullWidth}
         This is full width
-        [/FullWidth]
+        {/FullWidth}
 
-        [div fullWidth:true /]
+        {div fullWidth=true /}
 
         This is not full width
       `;
@@ -1107,7 +1107,7 @@ End text
       );
     });
     it('should preserve space between inline blocks - 2', function() {
-      const input = `[em]text[/em] [b]other text[/b]`;
+      const input = `{em}text{/em} {b}other text{/b}`;
 
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
@@ -1121,7 +1121,7 @@ End text
     });
 
     it('should handle equations with strange things inside - 1', function() {
-      const input = `[equation display:true]\sum_{j=0}^n x^{j} + \sum x^{k}[/equation]`;
+      const input = `{equation display=true}\sum_{j=0}^n x^{j} + \sum x^{k}{/equation}`;
 
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
@@ -1142,8 +1142,8 @@ End text
 
     it('should handle equations with strange things inside - 2', function() {
       const input = `
-      [equation display:true]\sum_{j=0}^n x^{j} + \sum_{k=0}^n x^{k}
-      [/equation]
+      {equation display=true}\sum_{j=0}^n x^{j} + \sum_{k=0}^n x^{k}
+      {/equation}
       `;
 
       expect(compile(input, { async: false })).to.eql(
@@ -1164,7 +1164,7 @@ End text
     });
 
     it('should handle code blocks with parens inside', function() {
-      const input = `[code](n - 1)!/2 possible paths[/code]`;
+      const input = `{code}(n - 1)!/2 possible paths{/code}`;
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           ['TextContainer', [], [['code', [], ['(n - 1)!/2 possible paths']]]]
@@ -1196,7 +1196,7 @@ End text
   describe('error handling', function() {
     it('record line and column number of an error', function() {
       const input =
-        'This string contains an un-closed component [BadComponent key:"val" ] ';
+        'This string contains an un-closed component {BadComponent key="val" } ';
       try {
         const output = compile(input, { async: false });
       } catch (err) {
@@ -1573,13 +1573,13 @@ End text
 
   it('should preprocess multiline equations', function() {
     const input = `
-      [Equation display:true]
+      {Equation display=true}
       \begin{aligned}
       (\overline{p + a})\star(\chi - p - a) &= \chi \star(\overline{p + a}) - (p + a)\star(\overline{p + a}) \\
       &= \chi\star\bar p + \chi\star\bar a - p\star\bar p - a\star\bar a - 2 p\star\bar a \\
       &= \bar p\star(\chi - p) + \bar a\star(\chi - a) - 2 p\star\bar a
       \end{aligned}
-      [/Equation]
+      {/Equation}
     `;
 
     expect(compile(input, { async: false })).to.eql({

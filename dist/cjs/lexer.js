@@ -1,6 +1,7 @@
 'use strict';
 
-var _templateObject = _taggedTemplateLiteralLoose(['[s*(', ')s*([^/]]*)s*][\ns\t]*(((?!([s*/(', ')s*])).\n?)*)[\ns\t]*[s*/s*(', ')s*]'], ['\\[\\s*(', ')\\s*([^\\/\\]]*)\\s*\\][\\n\\s\\t]*(((?!(\\[\\s*\\/(', ')\\s*\\])).\\n?)*)[\\n\\s\\t]*\\[\\s*\\/\\s*(', ')\\s*\\]']);
+var _templateObject = _taggedTemplateLiteralLoose(['$$s*([^$]*s*[\ns\t]*((?!($$)).\n?)*)[\ns\t]*s*$$'], ['\\$\\$\\s*([^$]*\\s*[\\n\\s\\t]*((?!(\\$\\$)).\\n?)*)[\\n\\s\\t]*\\s*\\$\\$']),
+    _templateObject2 = _taggedTemplateLiteralLoose(['[s*(', ')s*([^/]]*)s*][\ns\t]*(((?!([s*/(', ')s*])).\n?)*)[\ns\t]*[s*/s*(', ')s*]'], ['\\[\\s*(', ')\\s*([^\\/\\]]*)\\s*\\][\\n\\s\\t]*(((?!(\\[\\s*\\/(', ')\\s*\\])).\\n?)*)[\\n\\s\\t]*\\[\\s*\\/\\s*(', ')\\s*\\]']);
 
 function _taggedTemplateLiteralLoose(strings, raw) { strings.raw = raw; return strings; }
 
@@ -69,14 +70,16 @@ var lex = function lex(options) {
   // e.g. equations, and code snippets
   // that shouldn't be formatted.
   var equationAliases = findAliases('equation');
-  lexer.addRule(new RegExp(String.raw(_templateObject, equationAliases, equationAliases, equationAliases), 'i'), function (lexeme, tagName, props, innerText) {
+  lexer.addRule(new RegExp(String.raw(_templateObject),
+  // String.raw `\[\s*(${equationAliases})\s*([^\/\]]*)\s*\][\n\s\t]*(((?!(\[\s*\/(${equationAliases})\s*\])).\n?)*)[\n\s\t]*\[\s*\/\s*(${equationAliases})\s*\]`,
+  'i'), function (lexeme, innerText) {
     inComponent = false;
     if (this.reject) return;
     updatePosition(lexeme);
-    return ['OPEN_BRACKET', 'COMPONENT_NAME'].concat(formatToken('equation')).concat(recurse(props, { inComponent: true, gotName: true })).concat(['CLOSE_BRACKET']).concat(['WORDS']).concat(formatToken(innerText.trim())).concat(['OPEN_BRACKET', 'FORWARD_SLASH', 'COMPONENT_NAME']).concat(formatToken('equation')).concat(['CLOSE_BRACKET']);
+    return ['OPEN_BRACKET', 'COMPONENT_NAME'].concat(formatToken('equation')).concat(['CLOSE_BRACKET']).concat(['WORDS']).concat(formatToken(innerText.trim())).concat(['OPEN_BRACKET', 'FORWARD_SLASH', 'COMPONENT_NAME']).concat(formatToken('equation')).concat(['CLOSE_BRACKET']);
   });
   var codeAlias = findAliases('code');
-  lexer.addRule(new RegExp(String.raw(_templateObject, codeAlias, codeAlias, codeAlias), 'i'), function (lexeme, tagName, props, innerText) {
+  lexer.addRule(new RegExp(String.raw(_templateObject2, codeAlias, codeAlias, codeAlias), 'i'), function (lexeme, tagName, props, innerText) {
     inComponent = false;
     if (this.reject) return;
     updatePosition(lexeme);
@@ -214,6 +217,7 @@ var lex = function lex(options) {
     return output.concat(['LIST_END']);
   });
 
+  // rule to convert ~x=123 into derived variables
   lexer.addRule(/\s*~((\s*\w*\s*(:?=)\s*[^\n,]*)[^\n,](,[^\n]\s*\w*\s*(:?=)\s*[^\n,]*)*)/g, function (lexeme, variableDeclarations) {
     if (this.reject) return;
     updatePosition(lexeme);
@@ -248,14 +252,14 @@ var lex = function lex(options) {
     }
   });
 
-  lexer.addRule(/\/(\n?[^`\*\[\/\n\]!\\\d_])*/gm, function (lexeme) {
+  lexer.addRule(/\/(\n?[^`\*{\/\n}!\\\d_])*/gm, function (lexeme) {
     this.reject = inComponent || lexeme.trim() === '';
     if (this.reject) return;
     updatePosition(lexeme);
     return ['WORDS'].concat(formatToken(lexeme));
   });
 
-  lexer.addRule(/(\n?[^`\*\[\/\n\]!\\\d_])+/, function (lexeme) {
+  lexer.addRule(/(\n?[^`\*{\/\n}!\\\d_\$])+/, function (lexeme) {
     this.reject = inComponent || lexeme.trim() === '';
     if (this.reject) return;
     updatePosition(lexeme);
@@ -269,7 +273,7 @@ var lex = function lex(options) {
     updatePosition(lexeme);
     return ['WORDS'].concat(formatToken(lexeme));
   });
-  lexer.addRule(/\\[\[\]]?/, function (lexeme) {
+  lexer.addRule(/\\[{}\$]?/, function (lexeme) {
     this.reject = inComponent || lexeme.trim() === '';
     if (this.reject) return;
     updatePosition(lexeme);
@@ -287,14 +291,14 @@ var lex = function lex(options) {
     updatePosition(lexeme);
   });
 
-  lexer.addRule(/\[/, function (lexeme) {
+  lexer.addRule(/{/, function (lexeme) {
     inComponent = true;
     if (this.reject) return;
     updatePosition(lexeme);
     return ['OPEN_BRACKET'];
   });
 
-  lexer.addRule(/\]([ ]*)/, function (lexeme, trailingSpace) {
+  lexer.addRule(/}([ ]*)/, function (lexeme, trailingSpace) {
     inComponent = false;
     gotName = false;
     if (this.reject) return;
@@ -320,14 +324,14 @@ var lex = function lex(options) {
     return ['BOOLEAN'].concat(formatToken(lexeme));
   });
 
-  lexer.addRule(/[^+\-0-9:\s\/\]"'`\.]([^:\s\/\]"'`]*[^:\s\/\]"'`\.])*/, function (lexeme) {
+  lexer.addRule(/[^+=\-0-9\s\/}"'`\.]([^=\s\/}"'`]*[^=\s\/}"'`\.])*/, function (lexeme) {
     this.reject = !inComponent || gotName;
     if (this.reject) return;
     gotName = true;
     updatePosition(lexeme);
     return ['COMPONENT_NAME'].concat(formatToken(lexeme));
   });
-  lexer.addRule(/[^+\-0-9:\s\/\]"'`\.][^:\s\/\]"'`\.]*/, function (lexeme) {
+  lexer.addRule(/[^+\-0-9=\s\/}"'`\.][^=\s\/}"'`\.]*/, function (lexeme) {
     this.reject = !inComponent;
     if (this.reject) return;
     updatePosition(lexeme);
@@ -362,7 +366,7 @@ var lex = function lex(options) {
     return ['STRING'].concat(formatToken('"' + str + '"'));
   });
 
-  lexer.addRule(/:/, function (lexeme) {
+  lexer.addRule(/=/, function (lexeme) {
     this.reject = !inComponent;
     if (this.reject) return;
     updatePosition(lexeme);
