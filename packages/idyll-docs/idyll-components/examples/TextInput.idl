@@ -1,2 +1,0 @@
-[var name:"textVal" value:"Hello World" /]
-[TextInput value:textVal /]

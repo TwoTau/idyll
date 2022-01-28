@@ -1,2 +1,0 @@
-[var name:"radioVal" value:"test1" /]
-[Radio value:radioVal options:`["test1", "test2"]`  /]

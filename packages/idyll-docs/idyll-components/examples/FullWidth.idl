@@ -1,9 +1,0 @@
-The full width can be used as a wrapping component:
-
-[FullWidth]
-  ... put your content here ...
-[/FullWidth]
-
-or as a property on any other component:
-
-[Chart fullWidth:true /]
