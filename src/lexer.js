@@ -101,7 +101,7 @@ const lex = function(options, alias = {}) {
   const equationAliases = findAliases('equation');
   lexer.addRule(
     new RegExp(
-      String.raw `\[\s*(${equationAliases})\s*([^\/\]]*)\s*\][\n\s\t]*(((?!(\[\s*\/(${equationAliases})\s*\])).\n?)*)[\n\s\t]*\[\s*\/\s*(${equationAliases})\s*\]`,
+      String.raw `{\s*(${equationAliases})\s*([^\/}]*)\s*}[\n\s\t]*(((?!({\s*\/(${equationAliases})\s*})).\n?)*)[\n\s\t]*{\s*\/\s*(${equationAliases})\s*}`,
       'i'
     ),
     function(lexeme, tagName, props, innerText) {
@@ -122,7 +122,7 @@ const lex = function(options, alias = {}) {
   const codeAlias = findAliases('code');
   lexer.addRule(
     new RegExp(
-      String.raw`\[\s*(${codeAlias})\s*([^\/\]]*)\s*\][\n\s\t]*(((?!(\[\s*\/(${codeAlias})\s*\])).\n?)*)[\n\s\t]*\[\s*\/\s*(${codeAlias})\s*\]`,
+      String.raw`{\s*(${codeAlias})\s*([^\/}]*)\s*}[\n\s\t]*(((?!({\s*\/(${codeAlias})\s*})).\n?)*)[\n\s\t]*{\s*\/\s*(${codeAlias})\s*}`,
       'i'
     ),
     function(lexeme, tagName, props, innerText) {
@@ -183,7 +183,7 @@ const lex = function(options, alias = {}) {
     return ['INLINE_CODE'].concat(formatToken(text.trim()));
   });
 
-  lexer.addRule(/[\s\n]*(#{1,6})\s*([^\n\[]+)[\n\s]*/gm, function(
+  lexer.addRule(/[\s\n]*(#{1,6})\s*([^\n{]+)[\n\s]*/gm, function(
     lexeme,
     hashes,
     text
@@ -195,7 +195,7 @@ const lex = function(options, alias = {}) {
       .concat(['HEADER_END']);
   });
 
-  lexer.addRule(/[\s\n]*>\s*([^\n\[]+)[\n\s]*/gm, function(lexeme, text) {
+  lexer.addRule(/[\s\n]*>\s*([^\n{]+)[\n\s]*/gm, function(lexeme, text) {
     if (this.reject) return;
     updatePosition(lexeme);
     return ['BREAK', 'QUOTE_START']
@@ -377,14 +377,14 @@ const lex = function(options, alias = {}) {
     }
   });
 
-  lexer.addRule(/\/(\n?[^`\*{\/\n}!\\\d_])*/gm, function(lexeme) {
+  lexer.addRule(/\/(\n?[^`\*\[{\/\n\]}!\\\d_])*/gm, function(lexeme) {
     this.reject = inComponent || lexeme.trim() === '';
     if (this.reject) return;
     updatePosition(lexeme);
     return ['WORDS'].concat(formatToken(lexeme));
   });
 
-  lexer.addRule(/(\n?[^`\*{\/\n}!\\\d_\$])+/, function(lexeme) {
+  lexer.addRule(/(\n?[^`\*\[{\/\n\]}!\\\d_\$])+/, function(lexeme) {
     this.reject = inComponent || lexeme.trim() === '';
     if (this.reject) return;
     updatePosition(lexeme);

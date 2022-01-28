@@ -409,7 +409,7 @@ describe('compiler', function() {
 
         {component}This is not a > quote inside a component.{/component}
 
-        [component /]
+        {component /}
 
         > quote
 
@@ -455,7 +455,7 @@ And this is a normal paragraph. This is # not a header.
 
 {component}This is not a # header inside a component.{/component}
 
-[component /]
+{component /}
 
 # Header
 
