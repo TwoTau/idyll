@@ -136,7 +136,7 @@ Paragraph -> (ParagraphItem __):* ParagraphItem  {%
   }
 %}
 
-ParagraphItem -> (Text | ClosedComponent | OpenComponent | TextInline) {%
+ParagraphItem -> (Text | ClosedComponent | OpenComponent | ShorthandComponent | InlineStyleComponent | TextInline) {%
   function(data, location, reject) {
     return data[0][0];
   }
@@ -148,7 +148,7 @@ Text -> "WORDS" __ TokenValue {%
   }
 %}
 
-TextInline -> (CodeInline | BoldInline | EmInline | LinkInline | ImageInline) {%
+TextInline -> (CodeInline | BoldInline | EmInline | SuperscriptInline | SubscriptInline | StrikethroughInline | LinkInline | ImageInline) {%
   function(data, location, reject) {
     return data[0][0];
   }
@@ -176,6 +176,39 @@ EmInline -> "EM" (__ ParagraphItem):+ __ "EM_END" {%
   }
 %}
 
+SuperscriptInline -> "SUPER" (__ ParagraphItem):+ __ "SUPER_END" {%
+  function(data, location, reject) {
+    var children = [];
+    data[1].map(function (child) {
+      children.push(child[1]);
+    });
+
+    return ["super", [], children];
+  }
+%}
+
+SubscriptInline -> "SUB" (__ ParagraphItem):+ __ "SUB_END" {%
+  function(data, location, reject) {
+    var children = [];
+    data[1].map(function (child) {
+      children.push(child[1]);
+    });
+
+    return ["sub", [], children];
+  }
+%}
+
+StrikethroughInline -> "STRIKE" (__ ParagraphItem):+ __ "STRIKE_END" {%
+  function(data, location, reject) {
+    var children = [];
+    data[1].map(function (child) {
+      children.push(child[1]);
+    });
+
+    return ["strike", [], children];
+  }
+%}
+
 CodeInline -> "INLINE_CODE" __ TokenValue {%
   function(data, location, reject) {
     return ['code', [], [data[2]]];
@@ -191,6 +224,35 @@ ImageInline -> "IMAGE" __ TokenValue __ TokenValue {%
 LinkInline -> "LINK" __ TokenValue __ TokenValue {%
   function(data, location, reject) {
     return ['a', [["href", ["value", data[4]]]], [data[2]]];
+  }
+%}
+
+InlineStyleComponent -> "OPEN_STYLE_BRACKET" __ InlineStyleTag (__ ParagraphItem):+ __ "CLOSE_STYLE_BRACKET" {%
+  function(data, location, reject) {
+    var children = [];
+    data[3].map(function (child) {
+      children.push(child[1]);
+    });
+
+    return ["style", [["tag", ["value", data[2]]]], children];
+  }
+%}
+
+InlineStyleTag -> "STYLE_TAG" __ TokenValue {%
+  function(data, location, reject) {
+    return data[2];
+  }
+%}
+
+ShorthandComponent -> "OPEN_BRACKET" __ ComponentName __ ShorthandComponentContent __ "CLOSE_BRACKET" {%
+  function(data, location, reject) {
+    return [data[2], [], [data[4]]];
+  }
+%}
+
+ShorthandComponentContent -> "SHORTHAND_COMPONENT_CONTENT" __ TokenValue {%
+  function(data, location, reject) {
+    return data[2];
   }
 %}
 

@@ -170,7 +170,7 @@
 
         return ["p", [], children];
       }
-    }, { "name": "ParagraphItem$subexpression$1", "symbols": ["Text"] }, { "name": "ParagraphItem$subexpression$1", "symbols": ["ClosedComponent"] }, { "name": "ParagraphItem$subexpression$1", "symbols": ["OpenComponent"] }, { "name": "ParagraphItem$subexpression$1", "symbols": ["TextInline"] }, { "name": "ParagraphItem", "symbols": ["ParagraphItem$subexpression$1"], "postprocess": function postprocess(data, location, reject) {
+    }, { "name": "ParagraphItem$subexpression$1", "symbols": ["Text"] }, { "name": "ParagraphItem$subexpression$1", "symbols": ["ClosedComponent"] }, { "name": "ParagraphItem$subexpression$1", "symbols": ["OpenComponent"] }, { "name": "ParagraphItem$subexpression$1", "symbols": ["ShorthandComponent"] }, { "name": "ParagraphItem$subexpression$1", "symbols": ["InlineStyleComponent"] }, { "name": "ParagraphItem$subexpression$1", "symbols": ["TextInline"] }, { "name": "ParagraphItem", "symbols": ["ParagraphItem$subexpression$1"], "postprocess": function postprocess(data, location, reject) {
         return data[0][0];
       }
     }, { "name": "Text$string$1", "symbols": [{ "literal": "W" }, { "literal": "O" }, { "literal": "R" }, { "literal": "D" }, { "literal": "S" }], "postprocess": function joiner(d) {
@@ -178,7 +178,7 @@
       } }, { "name": "Text", "symbols": ["Text$string$1", "__", "TokenValue"], "postprocess": function postprocess(data, location, reject) {
         return data[2];
       }
-    }, { "name": "TextInline$subexpression$1", "symbols": ["CodeInline"] }, { "name": "TextInline$subexpression$1", "symbols": ["BoldInline"] }, { "name": "TextInline$subexpression$1", "symbols": ["EmInline"] }, { "name": "TextInline$subexpression$1", "symbols": ["LinkInline"] }, { "name": "TextInline$subexpression$1", "symbols": ["ImageInline"] }, { "name": "TextInline", "symbols": ["TextInline$subexpression$1"], "postprocess": function postprocess(data, location, reject) {
+    }, { "name": "TextInline$subexpression$1", "symbols": ["CodeInline"] }, { "name": "TextInline$subexpression$1", "symbols": ["BoldInline"] }, { "name": "TextInline$subexpression$1", "symbols": ["EmInline"] }, { "name": "TextInline$subexpression$1", "symbols": ["SuperscriptInline"] }, { "name": "TextInline$subexpression$1", "symbols": ["SubscriptInline"] }, { "name": "TextInline$subexpression$1", "symbols": ["StrikethroughInline"] }, { "name": "TextInline$subexpression$1", "symbols": ["LinkInline"] }, { "name": "TextInline$subexpression$1", "symbols": ["ImageInline"] }, { "name": "TextInline", "symbols": ["TextInline$subexpression$1"], "postprocess": function postprocess(data, location, reject) {
         return data[0][0];
       }
     }, { "name": "BoldInline$string$1", "symbols": [{ "literal": "S" }, { "literal": "T" }, { "literal": "R" }, { "literal": "O" }, { "literal": "N" }, { "literal": "G" }], "postprocess": function joiner(d) {
@@ -209,6 +209,48 @@
 
         return ["em", [], children];
       }
+    }, { "name": "SuperscriptInline$string$1", "symbols": [{ "literal": "S" }, { "literal": "U" }, { "literal": "P" }, { "literal": "E" }, { "literal": "R" }], "postprocess": function joiner(d) {
+        return d.join('');
+      } }, { "name": "SuperscriptInline$ebnf$1$subexpression$1", "symbols": ["__", "ParagraphItem"] }, { "name": "SuperscriptInline$ebnf$1", "symbols": ["SuperscriptInline$ebnf$1$subexpression$1"] }, { "name": "SuperscriptInline$ebnf$1$subexpression$2", "symbols": ["__", "ParagraphItem"] }, { "name": "SuperscriptInline$ebnf$1", "symbols": ["SuperscriptInline$ebnf$1", "SuperscriptInline$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {
+        return d[0].concat([d[1]]);
+      } }, { "name": "SuperscriptInline$string$2", "symbols": [{ "literal": "S" }, { "literal": "U" }, { "literal": "P" }, { "literal": "E" }, { "literal": "R" }, { "literal": "_" }, { "literal": "E" }, { "literal": "N" }, { "literal": "D" }], "postprocess": function joiner(d) {
+        return d.join('');
+      } }, { "name": "SuperscriptInline", "symbols": ["SuperscriptInline$string$1", "SuperscriptInline$ebnf$1", "__", "SuperscriptInline$string$2"], "postprocess": function postprocess(data, location, reject) {
+        var children = [];
+        data[1].map(function (child) {
+          children.push(child[1]);
+        });
+
+        return ["super", [], children];
+      }
+    }, { "name": "SubscriptInline$string$1", "symbols": [{ "literal": "S" }, { "literal": "U" }, { "literal": "B" }], "postprocess": function joiner(d) {
+        return d.join('');
+      } }, { "name": "SubscriptInline$ebnf$1$subexpression$1", "symbols": ["__", "ParagraphItem"] }, { "name": "SubscriptInline$ebnf$1", "symbols": ["SubscriptInline$ebnf$1$subexpression$1"] }, { "name": "SubscriptInline$ebnf$1$subexpression$2", "symbols": ["__", "ParagraphItem"] }, { "name": "SubscriptInline$ebnf$1", "symbols": ["SubscriptInline$ebnf$1", "SubscriptInline$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {
+        return d[0].concat([d[1]]);
+      } }, { "name": "SubscriptInline$string$2", "symbols": [{ "literal": "S" }, { "literal": "U" }, { "literal": "B" }, { "literal": "_" }, { "literal": "E" }, { "literal": "N" }, { "literal": "D" }], "postprocess": function joiner(d) {
+        return d.join('');
+      } }, { "name": "SubscriptInline", "symbols": ["SubscriptInline$string$1", "SubscriptInline$ebnf$1", "__", "SubscriptInline$string$2"], "postprocess": function postprocess(data, location, reject) {
+        var children = [];
+        data[1].map(function (child) {
+          children.push(child[1]);
+        });
+
+        return ["sub", [], children];
+      }
+    }, { "name": "StrikethroughInline$string$1", "symbols": [{ "literal": "S" }, { "literal": "T" }, { "literal": "R" }, { "literal": "I" }, { "literal": "K" }, { "literal": "E" }], "postprocess": function joiner(d) {
+        return d.join('');
+      } }, { "name": "StrikethroughInline$ebnf$1$subexpression$1", "symbols": ["__", "ParagraphItem"] }, { "name": "StrikethroughInline$ebnf$1", "symbols": ["StrikethroughInline$ebnf$1$subexpression$1"] }, { "name": "StrikethroughInline$ebnf$1$subexpression$2", "symbols": ["__", "ParagraphItem"] }, { "name": "StrikethroughInline$ebnf$1", "symbols": ["StrikethroughInline$ebnf$1", "StrikethroughInline$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {
+        return d[0].concat([d[1]]);
+      } }, { "name": "StrikethroughInline$string$2", "symbols": [{ "literal": "S" }, { "literal": "T" }, { "literal": "R" }, { "literal": "I" }, { "literal": "K" }, { "literal": "E" }, { "literal": "_" }, { "literal": "E" }, { "literal": "N" }, { "literal": "D" }], "postprocess": function joiner(d) {
+        return d.join('');
+      } }, { "name": "StrikethroughInline", "symbols": ["StrikethroughInline$string$1", "StrikethroughInline$ebnf$1", "__", "StrikethroughInline$string$2"], "postprocess": function postprocess(data, location, reject) {
+        var children = [];
+        data[1].map(function (child) {
+          children.push(child[1]);
+        });
+
+        return ["strike", [], children];
+      }
     }, { "name": "CodeInline$string$1", "symbols": [{ "literal": "I" }, { "literal": "N" }, { "literal": "L" }, { "literal": "I" }, { "literal": "N" }, { "literal": "E" }, { "literal": "_" }, { "literal": "C" }, { "literal": "O" }, { "literal": "D" }, { "literal": "E" }], "postprocess": function joiner(d) {
         return d.join('');
       } }, { "name": "CodeInline", "symbols": ["CodeInline$string$1", "__", "TokenValue"], "postprocess": function postprocess(data, location, reject) {
@@ -223,6 +265,37 @@
         return d.join('');
       } }, { "name": "LinkInline", "symbols": ["LinkInline$string$1", "__", "TokenValue", "__", "TokenValue"], "postprocess": function postprocess(data, location, reject) {
         return ['a', [["href", ["value", data[4]]]], [data[2]]];
+      }
+    }, { "name": "InlineStyleComponent$string$1", "symbols": [{ "literal": "O" }, { "literal": "P" }, { "literal": "E" }, { "literal": "N" }, { "literal": "_" }, { "literal": "S" }, { "literal": "T" }, { "literal": "Y" }, { "literal": "L" }, { "literal": "E" }, { "literal": "_" }, { "literal": "B" }, { "literal": "R" }, { "literal": "A" }, { "literal": "C" }, { "literal": "K" }, { "literal": "E" }, { "literal": "T" }], "postprocess": function joiner(d) {
+        return d.join('');
+      } }, { "name": "InlineStyleComponent$ebnf$1$subexpression$1", "symbols": ["__", "ParagraphItem"] }, { "name": "InlineStyleComponent$ebnf$1", "symbols": ["InlineStyleComponent$ebnf$1$subexpression$1"] }, { "name": "InlineStyleComponent$ebnf$1$subexpression$2", "symbols": ["__", "ParagraphItem"] }, { "name": "InlineStyleComponent$ebnf$1", "symbols": ["InlineStyleComponent$ebnf$1", "InlineStyleComponent$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {
+        return d[0].concat([d[1]]);
+      } }, { "name": "InlineStyleComponent$string$2", "symbols": [{ "literal": "C" }, { "literal": "L" }, { "literal": "O" }, { "literal": "S" }, { "literal": "E" }, { "literal": "_" }, { "literal": "S" }, { "literal": "T" }, { "literal": "Y" }, { "literal": "L" }, { "literal": "E" }, { "literal": "_" }, { "literal": "B" }, { "literal": "R" }, { "literal": "A" }, { "literal": "C" }, { "literal": "K" }, { "literal": "E" }, { "literal": "T" }], "postprocess": function joiner(d) {
+        return d.join('');
+      } }, { "name": "InlineStyleComponent", "symbols": ["InlineStyleComponent$string$1", "__", "InlineStyleTag", "InlineStyleComponent$ebnf$1", "__", "InlineStyleComponent$string$2"], "postprocess": function postprocess(data, location, reject) {
+        var children = [];
+        data[3].map(function (child) {
+          children.push(child[1]);
+        });
+
+        return ["style", [["tag", ["value", data[2]]]], children];
+      }
+    }, { "name": "InlineStyleTag$string$1", "symbols": [{ "literal": "S" }, { "literal": "T" }, { "literal": "Y" }, { "literal": "L" }, { "literal": "E" }, { "literal": "_" }, { "literal": "T" }, { "literal": "A" }, { "literal": "G" }], "postprocess": function joiner(d) {
+        return d.join('');
+      } }, { "name": "InlineStyleTag", "symbols": ["InlineStyleTag$string$1", "__", "TokenValue"], "postprocess": function postprocess(data, location, reject) {
+        return data[2];
+      }
+    }, { "name": "ShorthandComponent$string$1", "symbols": [{ "literal": "O" }, { "literal": "P" }, { "literal": "E" }, { "literal": "N" }, { "literal": "_" }, { "literal": "B" }, { "literal": "R" }, { "literal": "A" }, { "literal": "C" }, { "literal": "K" }, { "literal": "E" }, { "literal": "T" }], "postprocess": function joiner(d) {
+        return d.join('');
+      } }, { "name": "ShorthandComponent$string$2", "symbols": [{ "literal": "C" }, { "literal": "L" }, { "literal": "O" }, { "literal": "S" }, { "literal": "E" }, { "literal": "_" }, { "literal": "B" }, { "literal": "R" }, { "literal": "A" }, { "literal": "C" }, { "literal": "K" }, { "literal": "E" }, { "literal": "T" }], "postprocess": function joiner(d) {
+        return d.join('');
+      } }, { "name": "ShorthandComponent", "symbols": ["ShorthandComponent$string$1", "__", "ComponentName", "__", "ShorthandComponentContent", "__", "ShorthandComponent$string$2"], "postprocess": function postprocess(data, location, reject) {
+        return [data[2], [], [data[4]]];
+      }
+    }, { "name": "ShorthandComponentContent$string$1", "symbols": [{ "literal": "S" }, { "literal": "H" }, { "literal": "O" }, { "literal": "R" }, { "literal": "T" }, { "literal": "H" }, { "literal": "A" }, { "literal": "N" }, { "literal": "D" }, { "literal": "_" }, { "literal": "C" }, { "literal": "O" }, { "literal": "M" }, { "literal": "P" }, { "literal": "O" }, { "literal": "N" }, { "literal": "E" }, { "literal": "N" }, { "literal": "T" }, { "literal": "_" }, { "literal": "C" }, { "literal": "O" }, { "literal": "N" }, { "literal": "T" }, { "literal": "E" }, { "literal": "N" }, { "literal": "T" }], "postprocess": function joiner(d) {
+        return d.join('');
+      } }, { "name": "ShorthandComponentContent", "symbols": ["ShorthandComponentContent$string$1", "__", "TokenValue"], "postprocess": function postprocess(data, location, reject) {
+        return data[2];
       }
     }, { "name": "OpenComponent$ebnf$1", "symbols": ["Blocks"], "postprocess": id }, { "name": "OpenComponent$ebnf$1", "symbols": [], "postprocess": function postprocess(d) {
         return null;

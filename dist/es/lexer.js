@@ -1,5 +1,5 @@
 var _templateObject = _taggedTemplateLiteralLoose(['$$s*([^$]*s*[\ns\t]*((?!($$)).\n?)*)[\ns\t]*s*$$'], ['\\$\\$\\s*([^$]*\\s*[\\n\\s\\t]*((?!(\\$\\$)).\\n?)*)[\\n\\s\\t]*\\s*\\$\\$']),
-    _templateObject2 = _taggedTemplateLiteralLoose(['[s*(', ')s*([^/]]*)s*][\ns\t]*(((?!([s*/(', ')s*])).\n?)*)[\ns\t]*[s*/s*(', ')s*]'], ['\\[\\s*(', ')\\s*([^\\/\\]]*)\\s*\\][\\n\\s\\t]*(((?!(\\[\\s*\\/(', ')\\s*\\])).\\n?)*)[\\n\\s\\t]*\\[\\s*\\/\\s*(', ')\\s*\\]']);
+    _templateObject2 = _taggedTemplateLiteralLoose(['{s*(', ')s*([^/}]*)s*}[\ns\t]*(((?!({s*/(', ')s*})).\n?)*)[\ns\t]*{s*/s*(', ')s*}'], ['{\\s*(', ')\\s*([^\\/}]*)\\s*}[\\n\\s\\t]*(((?!({\\s*\\/(', ')\\s*})).\\n?)*)[\\n\\s\\t]*{\\s*\\/\\s*(', ')\\s*}']);
 
 function _taggedTemplateLiteralLoose(strings, raw) { strings.raw = raw; return strings; }
 
@@ -9,7 +9,7 @@ var formatToken = function formatToken(text) {
   text = text || '';
   var results = [];
   results.push('TOKEN_VALUE_START');
-  results.push('"' + text.replace(/\"/g, '&quot;').replace(/\\\[/, '[').replace(/\\\]/, ']') + '"');
+  results.push('"' + text.replace(/\"/g, '&quot;').replace(/\\{/, '{').replace(/\\}/, '}') + '"');
   results.push('TOKEN_VALUE_END');
   return results;
 };
@@ -32,6 +32,7 @@ var lex = function lex(options) {
     outer: true,
     skipLists: false,
     inComponent: false,
+    inStyleComponent: false,
     gotName: false
   }, options || {}),
       row = _Object$assign.row,
@@ -39,6 +40,7 @@ var lex = function lex(options) {
       outer = _Object$assign.outer,
       skipLists = _Object$assign.skipLists,
       inComponent = _Object$assign.inComponent,
+      inStyleComponent = _Object$assign.inStyleComponent,
       gotName = _Object$assign.gotName;
 
   var lexer = new Lexer(function (chr) {
@@ -67,14 +69,19 @@ var lex = function lex(options) {
   // Rules at the front are pre-processed,
   // e.g. equations, and code snippets
   // that shouldn't be formatted.
-  var equationAliases = findAliases('equation');
-  lexer.addRule(new RegExp(String.raw(_templateObject),
-  // String.raw `\[\s*(${equationAliases})\s*([^\/\]]*)\s*\][\n\s\t]*(((?!(\[\s*\/(${equationAliases})\s*\])).\n?)*)[\n\s\t]*\[\s*\/\s*(${equationAliases})\s*\]`,
-  'i'), function (lexeme, innerText) {
+  // for $$ syntax
+  lexer.addRule(new RegExp(String.raw(_templateObject), 'i'), function (lexeme, innerText) {
     inComponent = false;
     if (this.reject) return;
     updatePosition(lexeme);
     return ['OPEN_BRACKET', 'COMPONENT_NAME'].concat(formatToken('equation')).concat(['CLOSE_BRACKET']).concat(['WORDS']).concat(formatToken(innerText.trim())).concat(['OPEN_BRACKET', 'FORWARD_SLASH', 'COMPONENT_NAME']).concat(formatToken('equation')).concat(['CLOSE_BRACKET']);
+  });
+  var equationAliases = findAliases('equation');
+  lexer.addRule(new RegExp(String.raw(_templateObject2, equationAliases, equationAliases, equationAliases), 'i'), function (lexeme, tagName, props, innerText) {
+    inComponent = false;
+    if (this.reject) return;
+    updatePosition(lexeme);
+    return ['OPEN_BRACKET', 'COMPONENT_NAME'].concat(formatToken('equation')).concat(recurse(props, { inComponent: true, gotName: true })).concat(['CLOSE_BRACKET']).concat(['WORDS']).concat(formatToken(innerText.trim())).concat(['OPEN_BRACKET', 'FORWARD_SLASH', 'COMPONENT_NAME']).concat(formatToken('equation')).concat(['CLOSE_BRACKET']);
   });
   var codeAlias = findAliases('code');
   lexer.addRule(new RegExp(String.raw(_templateObject2, codeAlias, codeAlias, codeAlias), 'i'), function (lexeme, tagName, props, innerText) {
@@ -114,13 +121,13 @@ var lex = function lex(options) {
     return ['INLINE_CODE'].concat(formatToken(text.trim()));
   });
 
-  lexer.addRule(/[\s\n]*(#{1,6})\s*([^\n\[]+)[\n\s]*/gm, function (lexeme, hashes, text) {
+  lexer.addRule(/[\s\n]*(#{1,6})\s*([^\n{]+)[\n\s]*/gm, function (lexeme, hashes, text) {
     if (this.reject) return;
     updatePosition(lexeme);
     return ['BREAK', 'HEADER_' + hashes.length].concat(recurse(text, { skipLists: true })).concat(['HEADER_END']);
   });
 
-  lexer.addRule(/[\s\n]*>\s*([^\n\[]+)[\n\s]*/gm, function (lexeme, text) {
+  lexer.addRule(/[\s\n]*>\s*([^\n{]+)[\n\s]*/gm, function (lexeme, text) {
     if (this.reject) return;
     updatePosition(lexeme);
     return ['BREAK', 'QUOTE_START'].concat(recurse(text, { skipLists: true })).concat(['QUOTE_END']);
@@ -173,6 +180,51 @@ var lex = function lex(options) {
     if (this.reject) return;
     updatePosition(lexeme);
     var ret = ['EM'].concat(recurse(text, { skipLists: true })).concat(['EM_END']);
+    if (trailingSpace) {
+      if (shouldBreak(trailingSpace)) {
+        ret = ret.concat(['BREAK']);
+      } else {
+        ret = ret.concat(['WORDS']).concat(formatToken(trailingSpace));
+      }
+    }
+    return ret;
+  });
+
+  lexer.addRule(/~~([^\s\n][^~]*[^\s\n])~~(\s*)/g, function (lexeme, text, trailingSpace) {
+    this.reject = inComponent;
+    if (this.reject) return;
+    updatePosition(lexeme);
+    var ret = ['STRIKE'].concat(recurse(text, { skipLists: true })).concat(['STRIKE_END']);
+    if (trailingSpace) {
+      if (shouldBreak(trailingSpace)) {
+        ret = ret.concat(['BREAK']);
+      } else {
+        ret = ret.concat(['WORDS']).concat(formatToken(trailingSpace));
+      }
+    }
+    return ret;
+  });
+
+  lexer.addRule(/\^([^\s\n\^][^\^]*[^\s\n\^])\^(\s*)/g, function (lexeme, text, trailingSpace) {
+    this.reject = inComponent;
+    if (this.reject) return;
+    updatePosition(lexeme);
+    var ret = ['SUPER'].concat(recurse(text, { skipLists: true })).concat(['SUPER_END']);
+    if (trailingSpace) {
+      if (shouldBreak(trailingSpace)) {
+        ret = ret.concat(['BREAK']);
+      } else {
+        ret = ret.concat(['WORDS']).concat(formatToken(trailingSpace));
+      }
+    }
+    return ret;
+  });
+
+  lexer.addRule(/~([^\s\n~][^~]*[^\s\n~])~(\s*)/g, function (lexeme, text, trailingSpace) {
+    this.reject = inComponent;
+    if (this.reject) return;
+    updatePosition(lexeme);
+    var ret = ['SUB'].concat(recurse(text, { skipLists: true })).concat(['SUB_END']);
     if (trailingSpace) {
       if (shouldBreak(trailingSpace)) {
         ret = ret.concat(['BREAK']);
@@ -250,29 +302,29 @@ var lex = function lex(options) {
     }
   });
 
-  lexer.addRule(/\/(\n?[^`\*{\/\n}!\\\d_])*/gm, function (lexeme) {
-    this.reject = inComponent || lexeme.trim() === '';
+  lexer.addRule(/\/(\n?[^`\*\[{\/\n\]}!\\\d_\^~])*/gm, function (lexeme) {
+    this.reject = inComponent && !inStyleComponent || lexeme.trim() === '';
     if (this.reject) return;
     updatePosition(lexeme);
     return ['WORDS'].concat(formatToken(lexeme));
   });
 
-  lexer.addRule(/(\n?[^`\*{\/\n}!\\\d_\$])+/, function (lexeme) {
-    this.reject = inComponent || lexeme.trim() === '';
+  lexer.addRule(/(\n?[^`\*\[{\/\n\]}!\\\d_\^~\$])+/, function (lexeme) {
+    this.reject = inComponent && !inStyleComponent || lexeme.trim() === '';
     if (this.reject) return;
     updatePosition(lexeme);
     return ['WORDS'].concat(formatToken(lexeme));
   });
   // Match on separately so we can greedily match the
   // other tags.
-  lexer.addRule(/[!\d\*_`] */, function (lexeme) {
-    this.reject = inComponent || lexeme.trim() === '';
+  lexer.addRule(/[!\d\*_\^~`] */, function (lexeme) {
+    this.reject = inComponent && !inStyleComponent || lexeme.trim() === '';
     if (this.reject) return;
     updatePosition(lexeme);
     return ['WORDS'].concat(formatToken(lexeme));
   });
   lexer.addRule(/\\[{}\$]?/, function (lexeme) {
-    this.reject = inComponent || lexeme.trim() === '';
+    this.reject = inComponent && !inStyleComponent || lexeme.trim() === '';
     if (this.reject) return;
     updatePosition(lexeme);
     return ['WORDS'].concat(formatToken(lexeme));
@@ -287,6 +339,33 @@ var lex = function lex(options) {
 
   lexer.addRule(/[ \t\n]+/, function (lexeme) {
     updatePosition(lexeme);
+  });
+
+  lexer.addRule(/\[((?::[^:+=\-0-9\s\/}\]"'`\.](?:[^:=\s\/}\]"'`]*[^:=\s\/}\]"'`\.])*)+)/, function (lexeme, style) {
+    inComponent = true;
+    inStyleComponent = true;
+    if (this.reject) return;
+    var styleClasses = style.split(':').filter(function (x) {
+      return x;
+    }).join(' ');
+    updatePosition(lexeme);
+    return ['OPEN_STYLE_BRACKET', 'STYLE_TAG'].concat(formatToken(styleClasses));
+  });
+
+  lexer.addRule(/]/, function (lexeme) {
+    inComponent = false;
+    inStyleComponent = false;
+    if (this.reject) return;
+    updatePosition(lexeme);
+    return ['CLOSE_STYLE_BRACKET'];
+  });
+
+  lexer.addRule(/\]/, function (lexeme) {
+    inComponent = false;
+    gotName = false;
+    if (this.reject) return;
+    updatePosition(lexeme);
+    return ['FORWARD_SLASH', 'CLOSE_BRACKET'];
   });
 
   lexer.addRule(/{/, function (lexeme) {
@@ -309,35 +388,46 @@ var lex = function lex(options) {
   });
 
   lexer.addRule(/\//, function (lexeme) {
-    this.reject = !inComponent;
+    this.reject = !inComponent || inStyleComponent;
     if (this.reject) return;
     updatePosition(lexeme);
     return ['FORWARD_SLASH'];
   });
 
   lexer.addRule(/true|false/, function (lexeme) {
-    this.reject = !inComponent;
+    this.reject = !inComponent || inStyleComponent;
     if (this.reject) return;
     updatePosition(lexeme);
     return ['BOOLEAN'].concat(formatToken(lexeme));
   });
 
-  lexer.addRule(/[^+=\-0-9\s\/}"'`\.]([^=\s\/}"'`]*[^=\s\/}"'`\.])*/, function (lexeme) {
-    this.reject = !inComponent || gotName;
+  lexer.addRule(/[^:+=\-0-9\s\/}"'`\.]([^:=\s\/}"'`]*[^:=\s\/}"'`\.])*/, function (lexeme) {
+    this.reject = !inComponent || inStyleComponent || gotName;
     if (this.reject) return;
     gotName = true;
     updatePosition(lexeme);
     return ['COMPONENT_NAME'].concat(formatToken(lexeme));
   });
-  lexer.addRule(/[^+\-0-9=\s\/}"'`\.][^=\s\/}"'`\.]*/, function (lexeme) {
-    this.reject = !inComponent;
+
+  // TODO: handle slashes and curly brackets in content
+  // shorthand component
+  lexer.addRule(/([^:+=\-0-9\s\/}"'`\.](?:[^:=\s\/}"'`]*[^:=\s\/}"'`\.])*):([^+=\-0-9\/}"'`\.](?:[^=\/}"'`]*[^=\/}"'`\.])*)/, function (lexeme, name, content) {
+    this.reject = !inComponent || inStyleComponent || gotName;
+    if (this.reject) return;
+    gotName = true;
+    updatePosition(lexeme);
+    return ['COMPONENT_NAME'].concat(formatToken(name), ['SHORTHAND_COMPONENT_CONTENT'], formatToken(content));
+  });
+
+  lexer.addRule(/[^+\-0-9=\s\/}"'`\.][^=\s\/}\]"'`\.]*/, function (lexeme) {
+    this.reject = !inComponent || inStyleComponent;
     if (this.reject) return;
     updatePosition(lexeme);
     return ['COMPONENT_WORD'].concat(formatToken(lexeme));
   });
 
-  lexer.addRule(/`[^`]*`/, function (lexeme) {
-    this.reject = !inComponent;
+  lexer.addRule(/{[^\}]*}/, function (lexeme) {
+    this.reject = !inComponent || inStyleComponent;
     if (this.reject) return;
     updatePosition(lexeme);
     return ['EXPRESSION'].concat(formatToken(lexeme));
@@ -345,27 +435,27 @@ var lex = function lex(options) {
 
   lexer.addRule(/[+\-]?\.?[0-9]+\.?[0-9]*/, function (lexeme) {
     var multiplePeriods = (lexeme.match(new RegExp(/\./, 'g')) || []).length >= 2;
-    this.reject = !inComponent || multiplePeriods;
+    this.reject = !inComponent || inStyleComponent || multiplePeriods;
     if (this.reject) return;
     updatePosition(lexeme);
     return ['NUMBER'].concat(formatToken(lexeme));
   });
 
   lexer.addRule(/"[^"]*"/, function (lexeme) {
-    this.reject = !inComponent;
+    this.reject = !inComponent || inStyleComponent;
     if (this.reject) return;
     updatePosition(lexeme);
     return ['STRING'].concat(formatToken(lexeme));
   });
   lexer.addRule(/'([^']*)'/, function (lexeme, str) {
-    this.reject = !inComponent;
+    this.reject = !inComponent || inStyleComponent;
     if (this.reject) return;
     updatePosition(lexeme);
     return ['STRING'].concat(formatToken('"' + str + '"'));
   });
 
   lexer.addRule(/=/, function (lexeme) {
-    this.reject = !inComponent;
+    this.reject = !inComponent || inStyleComponent;
     if (this.reject) return;
     updatePosition(lexeme);
     return ['PARAM_SEPARATOR'];

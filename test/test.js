@@ -707,8 +707,8 @@ End text
       );
     });
 
-    it('should handle booleans in backticks', function() {
-      const input = '{component prop=`true` /}';
+    it('should handle booleans in curly brackets', function() {
+      const input = '{component prop={true} /}';
       expect(compile(input, { async: false })).to.eql(
         AST.convertV1ToV2([
           [
