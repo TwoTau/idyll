@@ -90,7 +90,7 @@ const lex = function(options, alias = {}) {
         if (this.reject) return;
         updatePosition(lexeme);
         return ['OPEN_BRACKET', 'COMPONENT_NAME']
-        .concat(formatToken('equation'))
+        .concat(formatToken('math'))
         .concat(['CLOSE_BRACKET'])
         .concat(['WORDS'])
         .concat(formatToken(innerText.trim()))
@@ -348,6 +348,24 @@ const lex = function(options, alias = {}) {
     return ret;
   });
 
+  // @references
+  lexer.addRule(/@([^\s{}\[\]\.,]+)/g, function(
+    lexeme,
+    text
+  ) {
+    inComponent = false;
+    if (this.reject) return;
+    updatePosition(lexeme);
+    return ['OPEN_BRACKET', 'COMPONENT_NAME']
+    .concat(formatToken('ref'))
+    .concat(['CLOSE_BRACKET'])
+    .concat(['WORDS'])
+    .concat(formatToken(text))
+    .concat(['OPEN_BRACKET', 'FORWARD_SLASH', 'COMPONENT_NAME'])
+    .concat(formatToken('equation'))
+    .concat(['CLOSE_BRACKET']);
+  });
+
   lexer.addRule(/^\s*([\-\*]\s+([^\n]*)\n)*([\-\*]\s+([^\n]*)\n?)/gm, function(
     lexeme
   ) {
@@ -441,14 +459,14 @@ const lex = function(options, alias = {}) {
     }
   });
 
-  lexer.addRule(/\/(\n?[^`\*\[{\/\n\]}!\\\d_\^~])*/gm, function(lexeme) {
+  lexer.addRule(/\/(\n?[^`\*\[{\/\n\]}!\\\d_\^~@])*/gm, function(lexeme) {
     this.reject = (inComponent && !inStyleComponent) || lexeme.trim() === '';
     if (this.reject) return;
     updatePosition(lexeme);
     return ['WORDS'].concat(formatToken(lexeme));
   });
 
-  lexer.addRule(/(\n?[^`\*\[{\/\n\]}!\\\d_\^~\$])+/, function(lexeme) {
+  lexer.addRule(/(\n?[^`\*\[{\/\n\]}!\\\d_\^~\$@])+/, function(lexeme) {
     this.reject = (inComponent && !inStyleComponent) || lexeme.trim() === '';
     if (this.reject) return;
     updatePosition(lexeme);
@@ -559,7 +577,7 @@ const lex = function(options, alias = {}) {
     return ['COMPONENT_NAME', ...formatToken(name), 'SHORTHAND_COMPONENT_CONTENT', ...formatToken(content)];
   });
 
-  lexer.addRule(/[^+\-0-9=\s\/}"'`\.][^=\s\/}\]"'`\.]*/, function(lexeme) {
+  lexer.addRule(/[^+\-0-9=:\s\/}"'`\.][^=:\s\/}\]"'`\.]*/, function(lexeme) {
     this.reject = !inComponent || inStyleComponent;
     if (this.reject) return;
     updatePosition(lexeme);
@@ -595,7 +613,7 @@ const lex = function(options, alias = {}) {
     return ['STRING'].concat(formatToken('"' + str + '"'));
   });
 
-  lexer.addRule(/=/, function(lexeme) {
+  lexer.addRule(/:/, function(lexeme) {
     this.reject = !inComponent || inStyleComponent;
     if (this.reject) return;
     updatePosition(lexeme);
